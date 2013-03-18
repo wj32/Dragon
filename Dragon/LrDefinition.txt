@@ -1,0 +1,19 @@
+Attribute = ID "(" ID ")"
+          | ID "(" ID "." ID ")"
+          ;
+Element = ID
+        | LITERAL_STRING
+        | "{" ID "}"
+        | "<" Attribute ">"
+        ;
+ElementList = Element
+            | Element ElementList ;
+OptionList = ElementList
+           | ElementList "|" OptionList
+           ;
+Production = ID "=" OptionList ";"
+           | ID "=" ";"
+           ;
+ProductionList = Production
+               | Production ProductionList ;
+__START__ = ProductionList ;

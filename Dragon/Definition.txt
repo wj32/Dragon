@@ -1,0 +1,323 @@
+// Action productions
+
+$EnableTypeName = ;
+$CreateFunctionScope = ;
+$DeleteFunctionScope = ;
+$PushScope = ;
+$PopScope = ;
+$IdLabel = ;
+$CaseLabel = ;
+$DefaultLabel = ;
+$If1 = ;
+$If2 = ;
+$IfElse1 = ;
+$IfElse2 = ;
+$While1 = ;
+$While2 = ;
+$While3 = ;
+$DoWhile1 = ;
+$DoWhile2 = ;
+$For1 = ;
+$For2A = ;
+$For2B = ;
+$For3A = ;
+$For3B = ;
+$For4A = ;
+$For4B = ;
+$Switch1 = ;
+$Switch2 = ;
+$Comma1 = ;
+$Conditional1 = ;
+$Conditional2 = ;
+$OrOr1 = ;
+$OrOr2 = ;
+$AndAnd1 = ;
+$AndAnd2 = ;
+$SizeOf1 = ;
+$SizeOf2 = ;
+
+// Normal productions
+
+BasicType =
+    VOID |
+    CHAR |
+    SHORT |
+    INT |
+    LONG |
+    FLOAT |
+    DOUBLE |
+    SIGNED |
+    UNSIGNED ;
+StorageClass =
+    AUTO |
+    EXTERN |
+    REGISTER |
+    STATIC |
+    TYPEDEF ;
+TypeQualifier =
+    CONST |
+    VOLATILE ;
+TypeQualifierList =
+    TypeQualifier {One} |
+    TypeQualifierList TypeQualifier {Many} ;
+
+Declarator =
+    Pointer DirectDeclarator {Pointer} |
+    DirectDeclarator {Direct} ;
+DirectDeclarator =
+    ID {Id} <Group(TypeId)> |
+    "(" Declarator ")" {Group} |
+    DirectDeclarator "[" "]" {Array} |
+    DirectDeclarator "[" ConditionalExpression "]" {Array2} |
+    DirectDeclarator "(" ")" {Function} |
+    DirectDeclarator "(" DeclaratorParameterList ")" {Function2} ;
+Pointer =
+    "*" {One} |
+    "*" TypeQualifierList {One2} |
+    Pointer "*" {Many} |
+    Pointer "*" TypeQualifierList {Many2} ;
+
+AbstractDeclarator =
+    Pointer {Pointer} |
+    DirectAbstractDeclarator {Direct} |
+    Pointer DirectAbstractDeclarator {Both} ;
+DirectAbstractDeclarator =
+    "(" AbstractDeclarator ")" {Group} |
+    "[" "]" {OneArray} |
+    "[" ConditionalExpression "]" {OneArray2} |
+    "(" ")" {OneFunction} |
+    "(" DeclaratorParameterList ")" {OneFunction2} |
+    DirectAbstractDeclarator "[" "]" {ManyArray} |
+    DirectAbstractDeclarator "[" ConditionalExpression "]" {ManyArray2} |
+    DirectAbstractDeclarator "(" ")" {ManyFunction} |
+    DirectAbstractDeclarator "(" DeclaratorParameterList ")" {ManyFunction2} ;
+
+Type =
+    ID {Name} <Group(TypeId)> |
+    BasicType {Basic} |
+    StructOrUnionType {Aggregate} |
+    EnumType {Enum} ;
+StructOrUnion =
+    STRUCT |
+    UNION ;
+StructOrUnionType =
+    StructOrUnion ID {Name} |
+    StructOrUnion "{" StructDeclarationList "}" {Fields} |
+    StructOrUnion ID "{" StructDeclarationList "}" {NameFields} ;
+EnumType =
+    ENUM ID {Name} |
+    ENUM "{" EnumValueList "}" {Fields} |
+    ENUM "{" EnumValueList "," "}" {Fields2} |
+    ENUM ID "{" EnumValueList "}" {NameFields} |
+    ENUM ID "{" EnumValueList "," "}" {NameFields2} ;
+EnumValueList =
+    EnumValue {One} |
+    EnumValueList "," EnumValue {Many} ;
+EnumValue =
+    ID {NoValue} |
+    ID "=" AssignExpression {Value} ;
+
+DeclarationSpecifierList =
+    Type {Type} |
+    DeclarationSpecifierList Type {ManyType} |
+    StorageClass {Storage} |
+    DeclarationSpecifierList StorageClass {ManyStorage} |
+    TypeQualifier {Qualifier} |
+    DeclarationSpecifierList TypeQualifier {ManyQualifier} ;
+
+ParameterList =
+    AssignExpression {One} |
+    ParameterList "," AssignExpression {Many} ;
+
+DeclaratorParameterList =
+    DeclaratorParameterList2 {NoEllipsis} |
+    DeclaratorParameterList2 "," "..." {Ellipsis} ;
+DeclaratorParameterList2 =
+    DeclaratorParameter {One} |
+    DeclaratorParameterList2 "," DeclaratorParameter {Many} ;
+DeclaratorParameter =
+    DeclarationSpecifierList $EnableTypeName {None} |
+    DeclarationSpecifierList Declarator $EnableTypeName {Name} |
+    DeclarationSpecifierList AbstractDeclarator $EnableTypeName {NoName} ;
+
+Declaration =
+    DeclarationSpecifierList ";" $EnableTypeName {NoName} |
+    DeclarationSpecifierList InitializationDeclaratorList ";" {Name} ;
+DeclarationList =
+    Declaration {One} |
+    DeclarationList Declaration {Many} ;
+InitializationDeclarator =
+    Declarator $EnableTypeName {Name} |
+    Declarator "=" Initializer $EnableTypeName {NameValue} ;
+InitializationDeclaratorList =
+    InitializationDeclarator {One} |
+    InitializationDeclaratorList "," InitializationDeclarator {Many} ;
+Initializer =
+    AssignExpression {Basic} |
+    "{" InitializerList "}" {Aggregate} |
+    "{" InitializerList "," "}" {Aggregate2} ;
+InitializerList =
+    Initializer {One} |
+    InitializerList "," Initializer {Many} ;
+
+StructDeclaration =
+    DeclarationSpecifierList ";" $EnableTypeName {NoName} |
+    DeclarationSpecifierList StructDeclaratorList ";" {Name} ;
+StructDeclarationList =
+    StructDeclaration {One} |
+    StructDeclarationList StructDeclaration {Many} ;
+StructDeclarator =
+    Declarator $EnableTypeName {Name} |
+    Declarator ":" ConditionalExpression $EnableTypeName {NameBits} |
+    ":" ConditionalExpression $EnableTypeName {Bits} ;
+StructDeclaratorList =
+    StructDeclarator {One} |
+    StructDeclaratorList "," StructDeclarator {Many} ;
+
+FunctionDefinition =
+    /* Declarator Block {Implicit} | */
+    /* Declarator DeclarationList Block {Implicit2} | */
+    DeclarationSpecifierList Declarator $EnableTypeName $CreateFunctionScope Block $DeleteFunctionScope {Explicit} /* |
+    DeclarationSpecifierList Declarator $EnableTypeName DeclarationList Block {Explicit2} */ ;
+
+Statement =
+    LabeledStatement |
+    IfStatement |
+    WhileStatement |
+    DoWhileStatement |
+    ForStatement |
+    SwitchStatement |
+    ContinueStatement |
+    BreakStatement |
+    ReturnStatement |
+    GotoStatement |
+    Declaration {Definition} |
+    ExpressionStatement |
+    Block ;
+StatementList =
+    Statement {One} |
+    StatementList Statement {Many} ;
+
+LabeledStatement =
+    ID ":" $IdLabel Statement {Id} |
+    CASE ConditionalExpression ":" $CaseLabel Statement {Case} |
+    DEFAULT ":" $DefaultLabel Statement {Default} ;
+IfStatement =
+    IF "(" Expression ")" $If1 Statement $If2 {If} |
+    IF "(" Expression ")" $If1 Statement ELSE $IfElse1 Statement $IfElse2 {IfElse} <Above($If2)> ;
+WhileStatement = WHILE $While1 "(" Expression ")" $While2 Statement $While3 ;
+DoWhileStatement = DO $DoWhile1 Statement WHILE "(" Expression ")" $DoWhile2 ";" ;
+ForStatement =
+    FOR "(" ExpressionStatement $For1 ExpressionStatement $For2A ")" $For3A Statement $For4A {NoIterate} |
+    FOR "(" ExpressionStatement $For1 ExpressionStatement $For2B Expression ")" $For3B Statement $For4B {Iterate} ;
+SwitchStatement = SWITCH "(" Expression ")" $Switch1 Statement $Switch2 ;
+ContinueStatement = CONTINUE ";" ;
+BreakStatement = BREAK ";" ;
+ReturnStatement =
+    RETURN ";" {NoValue} |
+    RETURN Expression ";" {Value} ;
+GotoStatement = GOTO ID ";" ;
+ExpressionStatement =
+    ";" {Empty} |
+    Expression ";" {NonEmpty} ;
+Block =
+    "{" "}" {Empty} |
+    "{" $PushScope StatementList $PopScope "}" {NonEmpty} ;
+
+Expression = CommaExpression ;
+CommaExpression =
+    AssignExpression {Up} |
+    CommaExpression "," $Comma1 AssignExpression {Comma} ;
+AssignExpression =
+    ConditionalExpression {Up} |
+    ConditionalExpression "=" AssignExpression {Assign} |
+    ConditionalExpression "+=" AssignExpression {Add} |
+    ConditionalExpression "-=" AssignExpression {Subtract} |
+    ConditionalExpression "*=" AssignExpression {Multiply} |
+    ConditionalExpression "/=" AssignExpression {Divide} |
+    ConditionalExpression "%=" AssignExpression {Modulo} |
+    ConditionalExpression "&=" AssignExpression {And} |
+    ConditionalExpression "|=" AssignExpression {Or} |
+    ConditionalExpression "^=" AssignExpression {Xor} |
+    ConditionalExpression "<<=" AssignExpression {LeftShift} |
+    ConditionalExpression ">>=" AssignExpression {RightShift} ;
+ConditionalExpression =
+    OrOrExpression {Up} |
+    OrOrExpression "?" $Conditional1 Expression ":" $Conditional2 ConditionalExpression {Conditional} ;
+OrOrExpression =
+    AndAndExpression {Up} |
+    OrOrExpression "||" $OrOr1 AndAndExpression $OrOr2 {OrOr} ;
+AndAndExpression =
+    OrExpression {Up} |
+    AndAndExpression "&&" $AndAnd1 OrExpression $AndAnd2 {AndAnd} ;
+OrExpression =
+    XorExpression {Up} |
+    OrExpression "|" XorExpression {Or} ;
+XorExpression =
+    AndExpression {Up} |
+    XorExpression "^" AndExpression {Xor} ;
+AndExpression =
+    EqualityExpression {Up} |
+    AndExpression "&" EqualityExpression {And} ;
+EqualityExpression =
+    RelationalExpression {Up} |
+    EqualityExpression "==" RelationalExpression {Equal} |
+    EqualityExpression "!=" RelationalExpression {NotEqual} ;
+RelationalExpression =
+    ShiftExpression {Up} |
+    RelationalExpression "<" ShiftExpression {Less} |
+    RelationalExpression "<=" ShiftExpression {LessEqual} |
+    RelationalExpression ">" ShiftExpression {Greater} |
+    RelationalExpression ">=" ShiftExpression {GreaterEqual} ;
+ShiftExpression =
+    AddExpression {Up} |
+    ShiftExpression "<<" AddExpression {LeftShift} |
+    ShiftExpression ">>" AddExpression {RightShift} ;
+AddExpression =
+    MultiplyExpression {Up} |
+    AddExpression "+" MultiplyExpression {Add} |
+    AddExpression "-" MultiplyExpression {Subtract} ;
+MultiplyExpression =
+    CastExpression {Up} |
+    MultiplyExpression "*" CastExpression {Multiply} |
+    MultiplyExpression "/" CastExpression {Divide} |
+    MultiplyExpression "%" CastExpression {Modulo} ;
+CastExpression =
+    UnaryExpression {Up} |
+    "(" DeclarationSpecifierList $EnableTypeName ")" UnaryExpression {Cast} |
+    "(" DeclarationSpecifierList AbstractDeclarator $EnableTypeName ")" UnaryExpression {Cast2} ;
+UnaryExpression =
+    PrimaryExpression {Up} |
+    "++" CastExpression {Increment} |
+    "--" CastExpression {Decrement} |
+    "+" CastExpression {Positive} |
+    "-" CastExpression {Negative} |
+    "!" CastExpression {LogicalNot} |
+    "~" CastExpression {Not} |
+    "*" CastExpression {Dereference} |
+    "&" CastExpression {AddressOf} |
+    SIZEOF $SizeOf1 UnaryExpression $SizeOf2 {SizeOfValue} |
+    SIZEOF $SizeOf1 "(" DeclarationSpecifierList $EnableTypeName ")" $SizeOf2 {SizeOfType} |
+    SIZEOF $SizeOf1 "(" DeclarationSpecifierList AbstractDeclarator $EnableTypeName ")" $SizeOf2 {SizeOfType2} ;
+PrimaryExpression =
+    ID {Id} <Group(TypeId)> |
+    LITERAL_NUMBER {Number} |
+    LITERAL_CHAR {Char} |
+    LITERAL_STRING {String} |
+    "(" Expression ")" {Group} |
+    PrimaryExpression "++" {Increment} |
+    PrimaryExpression "--" {Decrement} |
+    PrimaryExpression "(" ")" {Call} |
+    PrimaryExpression "(" ParameterList ")" {Call2} |
+    PrimaryExpression "[" Expression "]" {Array} |
+    PrimaryExpression "." ID {Member} |
+    PrimaryExpression "->" ID {IndirectMember} ;
+
+ProgramElement =
+    Declaration {Definition} |
+    FunctionDefinition {FunctionDefinition} ;
+TranslationUnit =
+    ProgramElement {One} |
+    TranslationUnit ProgramElement {Many} ;
+
+__START__ = TranslationUnit ;
